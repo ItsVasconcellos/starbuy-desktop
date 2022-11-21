@@ -339,5 +339,40 @@ namespace Starbuy_Desktop
                 MessageBox.Show(cadastroException.Message.ToString());
             }
         }
+
+        public static void atualizarStatus(String jwt,String identifier)
+        {
+            var req = (HttpWebRequest)WebRequest.Create(host + "/order/" + identifier);
+            appendHeaders("POST", req);
+            req.Headers.Add("Authorization", "Bearer " + jwt);
+            try
+            {
+                var httpResponse = (HttpWebResponse)req.GetResponse();
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                {
+                    var result = streamReader.ReadToEnd();
+                    try
+                    {
+                        EnderecoResponse resposta = JsonSerializer.Deserialize<EnderecoResponse>(result);
+                        if (resposta != null)
+                        {
+                            MessageBox.Show(resposta.message);
+                        }
+                        else
+                        {
+                            OrdersResponse.setOrdersResponse(new OrdersResponse(null));
+                        }
+                    }
+                    catch (NullReferenceException e)
+                    {
+                        MessageBox.Show(e.ToString());
+                    }
+                }
+            }
+            catch (Exception teste)
+            {
+                MessageBox.Show(teste.ToString());
+            }
+        }
     }
 }

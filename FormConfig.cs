@@ -183,7 +183,7 @@ public partial class FormConfig : Form {
 
         private void maskedTextBoxAdicionarCEP_TypeValidationCompleted(object sender, TypeValidationEventArgs e)
         {
-            LocalizarCEP();
+            
         }
         private void LocalizarCEP()
         {

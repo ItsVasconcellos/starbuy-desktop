@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,6 +22,7 @@ namespace Starbuy_Desktop
         private int currentGroupProducts = 0;
         private int ultPag = 0;
         private Categorias categorias = new Categorias();
+        static int height, width;
 
         public FormPedidos()
         {
@@ -63,7 +66,6 @@ namespace Starbuy_Desktop
             {
                 comboBox1.Items.Add(order.identifier);
             }
-
         }
 
         private void pictureBoxMenuVendedorCross_Click(object sender, EventArgs e)
@@ -100,6 +102,8 @@ namespace Starbuy_Desktop
 
         private void FormPedidos_Load(object sender, EventArgs e)
         {
+            height = this.Height;
+            width = this.Width;
             labelConfigCantoNome.Text = user.name;
             if (!string.IsNullOrEmpty(user.profile_picture))
             {
@@ -129,6 +133,7 @@ namespace Starbuy_Desktop
                     ultPag = (orders.getOrders().Length / 3) + 1;
                 }
                 labelPagina.Text = labelPagina.Text + "1 de " + ultPag.ToString();
+                comboBox1.SelectedIndex = 0;
                 foreach (Order orders in orders.getOrders()) // assim vai passar pelo loop para cada produto que o usuário tiver
                 {
                     GetGroupBox(orders, i);
@@ -136,6 +141,13 @@ namespace Starbuy_Desktop
                     if (i > 2) { break; }
                 }
             }
+            pictureBoxConfigCanto.Image = ResizeImage(pictureBoxConfigCanto.Image);
+            pictureBoxPedidosConfig.Image = ResizeImage(pictureBoxPedidosConfig.Image);
+            pictureBoxPedidosEstoque.Image = ResizeImage(pictureBoxPedidosEstoque.Image);
+            pictureBoxPedidosMenu.Image = ResizeImage(pictureBoxPedidosMenu.Image);
+            pictureBoxPedidosPedidos.Image = ResizeImage(pictureBoxPedidosPedidos.Image);
+            pictureBoxMenuVendedorCross.Image = ResizeImage(pictureBoxMenuVendedorCross.Image);
+
         }
         private void GetGroupBox(Order o, int i)
         {
@@ -320,5 +332,61 @@ namespace Starbuy_Desktop
             }
         }
 
+        private void btnPedidosAtualizar_Click(object sender, EventArgs e)
+        {
+            if (comboBox1.SelectedItem.ToString() != null)
+            {
+                MessageBox.Show(Session.getSession().getJWT());
+                API.atualizarStatus(Session.getSession().getJWT().ToString(), comboBox1.SelectedItem.ToString());
+                API.getPedidos(Session.getSession().getJWT());
+                int i = 0;
+                foreach (Order order in this.orders.getOrders())
+                {
+                    if ((currentGroupProducts * 3 - 1) > i)
+                    {
+                        i++;
+                    }
+                    else
+                    {
+                        GetGroupBox(order, (i - (currentGroupProducts * 3)));
+
+                        if (i - (currentGroupProducts * 3 - 1) > 2)
+                        {
+                            break;
+                        }
+                        i++;
+                    }
+                }
+            }
+        }
+
+        public static Bitmap ResizeImage(Image image)
+        {
+            var newHeight = image.Height * height / 786;
+            var newWidth = image.Width * width / 1386;
+            /*double locationX = inage.Location.X * propWidth;// + widthOriginal - p.Width;
+            double locationY = p.Location.Y * propHeight;// + heightOriginal - p.Height;*/
+            var destRect = new Rectangle(0, 0, newWidth, newHeight);
+            var destImage = new Bitmap(newWidth, newHeight);
+
+            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
+            using (var graphics = Graphics.FromImage(destImage))
+            {
+                graphics.CompositingMode = CompositingMode.SourceCopy;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                using (var wrapMode = new ImageAttributes())
+                {
+                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
+                }
+            }
+
+            return destImage;
+        }
     }
 }
